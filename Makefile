@@ -1,6 +1,6 @@
 MAJOR	?= 0
 MINOR	?= 103
-PATCH	?= 2
+PATCH	?= 3
 
 TAG	= g0dscookie/clamav
 TAGLIST = -t ${TAG}:${MAJOR} -t ${TAG}:${MAJOR}.${MINOR} -t ${TAG}:${MAJOR}.${MINOR}.${PATCH}

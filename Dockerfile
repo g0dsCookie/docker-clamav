@@ -1,4 +1,4 @@
-FROM debian:10
+FROM debian:11
 
 ARG MAJOR
 ARG MINOR
@@ -26,7 +26,7 @@ RUN set -eu \
         libjson-c-dev libbz2-dev libpcre2-dev ncurses-dev libxml2-dev \
         libmilter-dev \
  && apt-get install -qqy \
-        libcurl4 libjson-c3 libpcre2-8-0 libncurses6 libmilter1.0.1 libxml2 zlib1g \
+        libcurl4 libjson-c5 libpcre2-8-0 libncurses6 libmilter1.0.1 libxml2 zlib1g \
  && cecho "### IMPORTING GPG KEYS ###" \
  && gpg --import /tmp/talos.key && rm -f /tmp/talos.key \
  && cecho "### DOWNLOADING CLAMAV ###" \
