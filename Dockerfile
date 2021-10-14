@@ -52,7 +52,6 @@ RUN set -eu \
        -D ENABLE_CLAMONACC=ON \
        -D CLAMAV_USER=clamav -D CLAMAV_GROUP=clamav \
  && cmake --build . \
- && ctest --verbose \
  && cmake --build . --target install \
  && cecho "### COPY CONFIG ###" \
  && sed \
