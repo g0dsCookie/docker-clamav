@@ -20,7 +20,7 @@ jobs:
         uses: pozetroninc/github-action-get-latest-release@master
         with:
           owner: g0dsCookie
-          repo: docker-postfix
+          repo: docker-clamav
           excludes: prerelease, drafts
 
       - name: Set version
