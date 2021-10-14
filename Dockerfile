@@ -1,32 +1,34 @@
-FROM debian:11
+ARG DEBIAN_VERSION=11
+FROM debian:${DEBIAN_VERSION}
 
-ARG MAJOR
-ARG MINOR
-ARG PATCH
+ARG CLAMAV_VERSION
 
 LABEL \
     maintainer="g0dsCookie <g0dscookie@cookieprojects.de>" \
     description="An open source antivirus engine for detecting trojans, viruses, malware & other malicious threats" \
-    version="${MAJOR}.${MINOR}.${PATCH}"
+    version="${CLAMAV_VERSION}"
 
 COPY talos.key /tmp/talos.key
 
 RUN set -eu \
+ && CLAMAV_VERSION="$(echo ${CLAMAV_VERSION} | sed 's/^v//')" \
+ && echo "${CLAMAV_VERSION}" >ver \
+ && IFS='.' read MAJOR MINOR PATCH <ver && rm -f ver \
  && cecho() { echo "\033[1;32m$1\033[0m"; } \
  && cecho "### PREPARE ENVIRONMENT ###" \
- && TMP="$(mktemp -d)" && PV="${MAJOR}.${MINOR}.${PATCH}" && S="${TMP}/clamav-${PV}" \
+ && TMP="$(mktemp -d)" && PV="${CLAMAV_VERSION}" && S="${TMP}/clamav-${PV}" \
  && useradd -d /var/lib/clamav -M -r clamav \
  && mkdir -p /var/lib/clamav /run/clamav \
  && chown clamav:clamav /var/lib/clamav /run/clamav && chmod 0700 /var/lib/clamav /run/clamav \
  && cecho "### INSTALLING DEPENDENCIES ###" \
  && apt-get update -qq \
  && apt-get install -qqy \
-        build-essential curl gnupg \
+        build-essential cmake curl gnupg check \
         libssl-dev libcurl4-openssl-dev zlib1g-dev libpng-dev \
         libjson-c-dev libbz2-dev libpcre2-dev ncurses-dev libxml2-dev \
-        libmilter-dev \
+        libmilter-dev python3-dev \
  && apt-get install -qqy \
-        libcurl4 libjson-c5 libpcre2-8-0 libncurses6 libmilter1.0.1 libxml2 zlib1g \
+        libcurl4 libjson-c5 libpcre2-8-0 libncurses6 libmilter1.0.1 libxml2 zlib1g python3 \
  && cecho "### IMPORTING GPG KEYS ###" \
  && gpg --import /tmp/talos.key && rm -f /tmp/talos.key \
  && cecho "### DOWNLOADING CLAMAV ###" \
@@ -38,15 +40,20 @@ RUN set -eu \
  && tar -xf "clamav-${PV}.tar.gz" \
  && cecho "### BUILDING CLAMAV ###" \
  && cd "clamav-${PV}" \
- && ./configure \
-        --prefix=/usr --libdir=/usr/lib --sysconfdir=/etc/clamav \
-        --mandir=/usr/share/man --infodir=/usr/share/info \
-        --without-iconv --disable-llvm \
-        --with-user=clamav --with-group=clamav --with-dbdir=/var/lib/clamav \
-        --enable-clamdtop --enable-bigstack --with-pcre --enable-milter --enable-clamonacc \
- && make -j$(nproc) \
- && make check \
- && make install \
+ && mkdir build && cd build \
+ && cmake .. \
+       -D CMAKE_INSTALL_PREFIX=/usr \
+       -D CMAKE_INSTALL_LIBDIR=lib \
+       -D APP_CONFIG_DIRECTORY=/etc/clamav \
+       -D DATABASE_DIRECTORY=/var/lib/clamav \
+       -D ENABLE_JSON_SHARED=OFF \
+       -D ENABLE_SYSTEMD=OFF \
+       -D ENABLE_MILTER=ON \
+       -D ENABLE_CLAMONACC=ON \
+       -D CLAMAV_USER=clamav -D CLAMAV_GROUP=clamav \
+ && cmake --build . \
+ && ctest --verbose \
+ && cmake --build . --target install \
  && cecho "### COPY CONFIG ###" \
  && sed \
         -e "s:^\(Example\):\# \1:" \
@@ -71,10 +78,10 @@ RUN set -eu \
  && cecho "### CLEANUP ###" \
  && cd && rm -rf "${TMP}" \
  && apt-get remove -qqy \
-        build-essential curl gnupg \
+        build-essential cmake curl gnupg check \
         libssl-dev libcurl4-openssl-dev zlib1g-dev libpng-dev \
         libjson-c-dev libbz2-dev libpcre2-dev ncurses-dev libxml2-dev \
-        libmilter-dev \
+        libmilter-dev python3-dev \
  && apt-get autoremove -qqy \
  && apt-get clean -qqy
 
