@@ -85,6 +85,7 @@ RUN set -eu \
  && apt-get clean -qqy
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 EXPOSE 3310/tcp
 VOLUME [ "/etc/clamav", "/var/lib/clamav" ]
